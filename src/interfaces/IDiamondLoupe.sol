@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-// Loupe = IRL tool used to look at diamonds. These functions look at diamonds.
+// Loupe = IRL tool used to look at diamonds. These functions view a Diamond contract.
 interface IDiamondLoupe {
 
     struct Facet {

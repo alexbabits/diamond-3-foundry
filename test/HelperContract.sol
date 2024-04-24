@@ -2,12 +2,12 @@
 pragma solidity ^0.8.23;
 
 import "../lib/solidity-stringutils/strings.sol";
-import "../src/interfaces/IDiamond.sol";
+import "../src/interfaces/IDiamondCut.sol";
 import "../src/interfaces/IDiamondLoupe.sol";
 import "../lib/forge-std/src/Test.sol";
 
 // Helper functions for the translation from the jest tests in the original repo to solidity tests.
-abstract contract HelperContract is IDiamond, IDiamondLoupe, Test{
+abstract contract HelperContract is IDiamondCut, IDiamondLoupe, Test{
     using strings for *;
 
     // return array of function selectors for given facet name
@@ -45,6 +45,7 @@ abstract contract HelperContract is IDiamond, IDiamondLoupe, Test{
         }
         return selectors;
     }
+
 
     // helper to remove index from bytes4[] array
     function removeElement(uint index, bytes4[] memory array) public pure returns (bytes4[] memory){
@@ -123,7 +124,8 @@ abstract contract HelperContract is IDiamond, IDiamondLoupe, Test{
         return selectors;
     }
 
-    // implement dummy override functions
+    // Fixes "Missing Implementation" compile error during tests/deployment because it thinks we never use these functions.
+    // (dummy/no-op/stubs)
     function diamondCut(FacetCut[] calldata _diamondCut, address _init, bytes calldata _calldata) external {}
     function facetAddress(bytes4 _functionSelector) external view returns (address facetAddress_) {}
     function facetAddresses() external view returns (address[] memory facetAddresses_) {}

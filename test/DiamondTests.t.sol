@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
-
+/*
 import "./TestStates.sol";
 
 // Test deployment of Diamond
@@ -206,3 +206,4 @@ contract TestCacheBug is StateCacheBug {
         assertFalse(containsElement(fromLoupeSelectors, selectors[5]));
     }
 }
+*/

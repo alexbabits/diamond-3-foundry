@@ -13,7 +13,7 @@ library LibExample {
         return c;
     }
 
-    // This example function shows that we can also update the state in `AppStorage`!
+    // This example function shows that we can also update the state in `AppStorage`
     function changeState(uint256 a, uint256 b) internal returns (uint256) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         s.firstVar += a;

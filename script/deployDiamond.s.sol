@@ -2,56 +2,57 @@
 pragma solidity ^0.8.23;
 
 import "forge-std/Script.sol";
-import "../src/Diamond.sol";
-import "../src/facets/DiamondCutFacet.sol";
-import "../src/facets/DiamondLoupeFacet.sol";
-import "../src/facets/OwnershipFacet.sol";
-import "../src/upgradeInitializers/DiamondInit.sol";
-import "../test/HelperContract.sol";
 
-// Script to deploy a template Diamond with Cut, Loupe and Ownership facet
+import {Diamond} from "../src/Diamond.sol";
+import {DiamondInit} from "../src/upgradeInitializers/DiamondInit.sol";
+
+import {DiamondCutFacet} from "../src/facets/DiamondCutFacet.sol";
+import {DiamondLoupeFacet} from "../src/facets/DiamondLoupeFacet.sol";
+import {OwnershipFacet} from "../src/facets/OwnershipFacet.sol";
+
+import {IDiamondCut} from "../src/interfaces/IDiamondCut.sol";
+import {IOwnership} from "../src/interfaces/IOwnership.sol";
+
+import {HelperContract} from "../test/HelperContract.sol";
+
+// Script to deploy a Diamond with CutFacet, LoupeFacet and OwnershipFacet
 contract DeployScript is Script, HelperContract {
     function run() external {
 
         vm.startBroadcast();
 
-        // Deploy facets and the init contract
+        // Deploy Contracts
+        DiamondInit diamondInit = new DiamondInit();
         DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
         DiamondLoupeFacet diamondLoupeFacet = new DiamondLoupeFacet();
         OwnershipFacet ownershipFacet = new OwnershipFacet();
-        DiamondInit diamondInit = new DiamondInit();
 
-        // Diamond arguments
-        DiamondArgs memory _args = DiamondArgs({
-            owner: msg.sender,
-            init: address(diamondInit),
-            initCalldata: abi.encodeWithSignature("init()") // calls the `init()` function upon `Diamond` deployment
-        });
+        // Public address associated with the private key that launched this script is now the owner, "msg.sender".
+        Diamond diamond = new Diamond(msg.sender, address(diamondCutFacet));
+        console.log("Deployed Diamond.sol at address:", address(diamond));
 
-        // FacetCut array which contains the three standard facets to be added
-        FacetCut[] memory cut = new FacetCut[](3);
+        // We prepare an array of `cuts` that we want to upgrade our Diamond with.
+        // The cuts are the remaining facets, their associated functions, and the action (we want to add).
+        // (DiamondCutFacet was already cut during Diamond deployment)
+        FacetCut[] memory cut = new FacetCut[](2);
 
         cut[0] = FacetCut({
-            facetAddress: address(diamondCutFacet),
-            action: IDiamond.FacetCutAction.Add,
-            functionSelectors: generateSelectors("DiamondCutFacet")
-        });
-
-        cut[1] = FacetCut({
             facetAddress: address(diamondLoupeFacet),
-            action: FacetCutAction.Add,
+            action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: generateSelectors("DiamondLoupeFacet")
         });
 
-        cut[2] = FacetCut({
+        cut[1] = FacetCut({
             facetAddress: address(ownershipFacet),
-            action: FacetCutAction.Add,
+            action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: generateSelectors("OwnershipFacet")
         });
 
-        // deploy our Diamond after the "core" facets are cut and ready to go, along with all the args needed.
-        Diamond diamond = new Diamond(cut, _args);
-        console.log("Deployed Diamond.sol at address: ", address(diamond));
+        // Now that we have all the cuts we want, we can upgrade the diamond to include these facets.
+        // We call `diamondCut` with our `diamond` contract through the `DiamondCutFacet.sol` interface.
+        IDiamondCut(address(diamond)).diamondCut(cut, address(diamondInit), abi.encodeWithSignature("init()"));
+
+        console.log("Diamond cut complete. Owner of Diamond:", IOwnership(address(diamond)).owner());
 
         vm.stopBroadcast();
     }
