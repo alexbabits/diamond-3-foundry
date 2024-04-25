@@ -16,6 +16,7 @@ import {IERC165} from "../src/interfaces/IERC165.sol";
 import {IERC173} from "../src/interfaces/IERC173.sol";
 
 // Script to deploy a Diamond with CutFacet, LoupeFacet and OwnershipFacet
+// This Script DOES NOT upgrade the diamond with any of the example facets.
 contract DeployScript is Script {
     function run() external {
 

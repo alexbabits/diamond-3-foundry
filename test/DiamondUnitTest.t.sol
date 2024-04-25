@@ -17,6 +17,8 @@ import {IERC165} from "../src/interfaces/IERC165.sol";
 import {IERC173} from "../src/interfaces/IERC173.sol";
 
 import {ExampleFacet} from "../src/facets/ExampleFacet.sol";
+import {FacetWithAppStorage} from "../src/facets/FacetWithAppStorage.sol";
+import {FacetWithAppStorage2} from "../src/facets/FacetWithAppStorage2.sol";
 
 contract DiamondUnitTest is Test {
 
@@ -30,6 +32,8 @@ contract DiamondUnitTest is Test {
     IDiamondCutFacet ICut;
 
     ExampleFacet exampleFacet;
+    FacetWithAppStorage facetWithAppStorage;
+    FacetWithAppStorage2 facetWithAppStorage2;
 
     address diamondOwner = address(0x1337DAD);
 
@@ -125,8 +129,8 @@ contract DiamondUnitTest is Test {
         assertEq(facetAddressList[2], ILoupe.facetAddress(IERC173.transferOwnership.selector), "should match");   
     }
 
-    // Tests Add, Replace, and Remove functionality.
-    function test_ExampleFacet() public {
+    // Tests Add, Replace, and Remove functionality for ExampleFacet
+    function test_AddReplaceRemove() public {
 
         // Deploy another facet
         exampleFacet = new ExampleFacet();
@@ -239,12 +243,95 @@ contract DiamondUnitTest is Test {
         assertEq(address(0), ILoupe.facetAddress(ExampleFacet.exampleFunction2.selector));
         assertEq(address(0), ILoupe.facetAddress(ExampleFacet.exampleFunction3.selector));
 
-        // Note: I did not bother to test the cache bug, because I'm too lazy to figure out
-        // where the last selector is in slot 1 before the storage jumps to slot 2.
-        // Apparently there's some bug that is supposed to manifest (but not anymore?) 
-        // when you remove a function selector from the last position in slot 1 before
-        // The storage jumps to slot 2, and so on.
-        // Because I haven't changed the core diamond template from diamond-3 I assume it's fine.
+        // Note: I have not changed the template in diamond-3 in any meaningful way.
+        // Therefore, I did not include the cache bug test here b/c it is fixed in diamond-3.
+    }
+
+
+    // Tests AppStorage with two new facets.
+    function test_AppStorage() public {
+
+        facetWithAppStorage = new FacetWithAppStorage();
+
+        IDiamondCutFacet.FacetCut[] memory cut = new IDiamondCutFacet.FacetCut[](1);
+
+        bytes4[] memory selectors = new bytes4[](5);
+        selectors[0] = FacetWithAppStorage.doSomething.selector; 
+        selectors[1] = FacetWithAppStorage.doSomethingElse.selector; 
+        selectors[2] = FacetWithAppStorage.libraryFunctionOne.selector;
+        selectors[3] = FacetWithAppStorage.libraryFunctionTwo.selector;
+        selectors[4] = FacetWithAppStorage.getVars.selector; 
+
+        cut[0] = IDiamondCutFacet.FacetCut({
+            facetAddress: address(facetWithAppStorage),
+            action: IDiamondCutFacet.FacetCutAction.Add,
+            functionSelectors: selectors
+        });
+
+        vm.prank(diamondOwner);
+        ICut.diamondCut(cut, address(0x0), "");
+
+        facetAddressList = IDiamondLoupeFacet(address(diamond)).facetAddresses(); // save all facet addresses
+
+        // Sanity check
+        assertEq(facetAddressList.length, 4, "Cut, Loupe, Ownership, FacetWithAppStorage");
+        assertNotEq(facetAddressList[3], address(0), "FacetWithAppStorage is not 0x0 address");
+
+        FacetWithAppStorage FWAS = FacetWithAppStorage(address(diamond)); // for ease of use.
+
+        // Do the functions actually update `AppStorage` correctly?
+        FWAS.doSomethingElse(5, 7);
+        (uint256 one, uint256 two, , , ) = FWAS.getVars();
+        assertEq(one, 5, "0+5");
+        assertEq(two, 7, "0+7");
+
+        FWAS.doSomething(); 
+        ( , , , , uint256 last) = FWAS.getVars();
+        assertEq(last, 12, "5+7");
+
+        uint256 c = FWAS.libraryFunctionOne(42, 13);
+        assertEq(c, 62, "42+13+7");
+
+        FWAS.libraryFunctionTwo(69, 420);
+        ( , , uint256 third, uint256 fourth, ) = FWAS.getVars();
+        assertEq(third, 69, "0+69");
+        assertEq(fourth, 420, "0+420");
+
+        FWAS.libraryFunctionTwo(69, 420);
+        ( , , uint256 thirdAgain, uint256 fourthAgain, ) = FWAS.getVars();
+        assertEq(thirdAgain, 138, "69+69");
+        assertEq(fourthAgain, 840, "420+420");
+
+
+        // *********************************************
+        // ***** Test AppStorage with Second Facet *****
+        // *********************************************
+
+        facetWithAppStorage2 = new FacetWithAppStorage2();
+
+        IDiamondCutFacet.FacetCut[] memory cut2 = new IDiamondCutFacet.FacetCut[](1);
+
+        bytes4[] memory selector = new bytes4[](1);
+        selector[0] = FacetWithAppStorage2.getFirstVar.selector; 
+
+        cut2[0] = IDiamondCutFacet.FacetCut({
+            facetAddress: address(facetWithAppStorage2),
+            action: IDiamondCutFacet.FacetCutAction.Add,
+            functionSelectors: selector
+        });
+
+        vm.prank(diamondOwner);
+        ICut.diamondCut(cut2, address(0x0), "");
+
+        facetAddressList = IDiamondLoupeFacet(address(diamond)).facetAddresses(); // save all facet addresses
+
+        // Sanity check
+        assertEq(facetAddressList.length, 5, "Cut, Loupe, Ownership, FWAS, FWAS2");
+        assertNotEq(facetAddressList[4], address(0), "FWAS2 is not 0x0 address");
+
+        // AppStorage should properly persist between multiple facets
+        FacetWithAppStorage2 FWAS2 = FacetWithAppStorage2(address(diamond)); // for ease of use.
+        assertEq(FWAS2.getFirstVar(), 5, "should match");
     }
 
 }
