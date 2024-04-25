@@ -2,7 +2,7 @@
 pragma solidity ^0.8.23;
 
 import {LibDiamond} from "./libraries/LibDiamond.sol";
-import {IDiamondCut} from "./interfaces/IDiamondCut.sol";
+import {IDiamondCutFacet} from "./interfaces/IDiamondCutFacet.sol";
 
 contract Diamond {    
 
@@ -10,19 +10,19 @@ contract Diamond {
         LibDiamond.setContractOwner(_contractOwner);
 
         // Add the diamondCut external function from the diamondCutFacet
-        IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
+        IDiamondCutFacet.FacetCut[] memory cut = new IDiamondCutFacet.FacetCut[](1);
         bytes4[] memory functionSelectors = new bytes4[](1);
-        functionSelectors[0] = IDiamondCut.diamondCut.selector;
-        cut[0] = IDiamondCut.FacetCut({
+        functionSelectors[0] = IDiamondCutFacet.diamondCut.selector;
+        cut[0] = IDiamondCutFacet.FacetCut({
             facetAddress: _diamondCutFacet, 
-            action: IDiamondCut.FacetCutAction.Add, 
+            action: IDiamondCutFacet.FacetCutAction.Add, 
             functionSelectors: functionSelectors
         });
         LibDiamond.diamondCut(cut, address(0), "");        
     }
 
-    // Find facet for function that is called and execute the
-    // function if a facet is found and return any value.
+    // Find the facet for the function that is called and 
+    // execute the function if a facet is found and return any value.
     fallback() external payable {
         LibDiamond.DiamondStorage storage ds;
         bytes32 position = LibDiamond.DIAMOND_STORAGE_POSITION;

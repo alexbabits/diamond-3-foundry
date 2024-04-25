@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {IDiamondCut} from "../interfaces/IDiamondCut.sol";
+import {IDiamondCutFacet} from "../interfaces/IDiamondCutFacet.sol";
 
 error InitializationFunctionReverted(address _initializationContractAddress, bytes _calldata);
 
@@ -19,13 +19,11 @@ library LibDiamond {
     }
 
     struct DiamondStorage {
-        // maps function selector to the facet address and
-        // the position of the selector in the facetFunctionSelectors.selectors array
-        mapping(bytes4 => FacetAddressAndPosition) selectorToFacetAndPosition;
-        mapping(address => FacetFunctionSelectors) facetFunctionSelectors; // facet addresses to function selectors
-        address[] facetAddresses; // facet addresses
-        mapping(bytes4 => bool) supportedInterfaces; // query if a contract implements an interface. Used to implement ERC-165.
-        address contractOwner;
+        mapping(bytes4 => FacetAddressAndPosition) selectorToFacetAndPosition; // function selector --> `FacetAddressAndPosition`
+        mapping(address => FacetFunctionSelectors) facetFunctionSelectors; // facet --> `FacetFunctionSelectors`
+        address[] facetAddresses; // Array of all facet addresses
+        mapping(bytes4 => bool) supportedInterfaces; // interfaceId --> supports interface? (IERC165)
+        address contractOwner; // Owner of Diamond
     }
 
     function diamondStorage() internal pure returns (DiamondStorage storage ds) {
@@ -52,21 +50,17 @@ library LibDiamond {
         require(msg.sender == diamondStorage().contractOwner, "LibDiamond: Must be contract owner");
     }
 
-    event DiamondCut(IDiamondCut.FacetCut[] _diamondCut, address _init, bytes _calldata);
+    event DiamondCut(IDiamondCutFacet.FacetCut[] _diamondCut, address _init, bytes _calldata);
 
     // Internal function version of diamondCut
-    function diamondCut(
-        IDiamondCut.FacetCut[] memory _diamondCut,
-        address _init,
-        bytes memory _calldata
-    ) internal {
+    function diamondCut(IDiamondCutFacet.FacetCut[] memory _diamondCut, address _init, bytes memory _calldata) internal {
         for (uint256 facetIndex; facetIndex < _diamondCut.length; facetIndex++) {
-            IDiamondCut.FacetCutAction action = _diamondCut[facetIndex].action;
-            if (action == IDiamondCut.FacetCutAction.Add) {
+            IDiamondCutFacet.FacetCutAction action = _diamondCut[facetIndex].action;
+            if (action == IDiamondCutFacet.FacetCutAction.Add) {
                 addFunctions(_diamondCut[facetIndex].facetAddress, _diamondCut[facetIndex].functionSelectors);
-            } else if (action == IDiamondCut.FacetCutAction.Replace) {
+            } else if (action == IDiamondCutFacet.FacetCutAction.Replace) {
                 replaceFunctions(_diamondCut[facetIndex].facetAddress, _diamondCut[facetIndex].functionSelectors);
-            } else if (action == IDiamondCut.FacetCutAction.Remove) {
+            } else if (action == IDiamondCutFacet.FacetCutAction.Remove) {
                 removeFunctions(_diamondCut[facetIndex].facetAddress, _diamondCut[facetIndex].functionSelectors);
             } else {
                 revert("LibDiamondCut: Incorrect FacetCutAction");

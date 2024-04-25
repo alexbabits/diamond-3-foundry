@@ -2,10 +2,10 @@
 pragma solidity ^0.8.23;
 
 import {LibDiamond} from  "../libraries/LibDiamond.sol";
-import {IDiamondLoupe} from "../interfaces/IDiamondLoupe.sol";
+import {IDiamondLoupeFacet} from "../interfaces/IDiamondLoupeFacet.sol";
 import {IERC165} from "../interfaces/IERC165.sol";
 
-contract DiamondLoupeFacet is IDiamondLoupe, IERC165 {
+contract DiamondLoupeFacet is IDiamondLoupeFacet, IERC165 {
 
     // Returns all facets AND their functions.
     function facets() external override view returns (Facet[] memory facets_) {

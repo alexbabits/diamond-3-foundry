@@ -8,15 +8,3 @@ struct AppStorage {
     uint256 fourthVar;
     uint256 lastVar;
 }
-
-//Other structs I might need?
-/* 
-struct StructOne {
-    uint256 exNumberOne;
-    uint256 exNumberTwo;
-    uint256 exNumberThree;
-}
-struct StructTwo {}
-struct StructThree {}
-struct StructFour {}
-*/

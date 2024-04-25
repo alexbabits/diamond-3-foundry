@@ -2,7 +2,7 @@
 pragma solidity ^0.8.23;
 
 // Loupe = IRL tool used to look at diamonds. These functions view a Diamond contract.
-interface IDiamondLoupe {
+interface IDiamondLoupeFacet {
 
     struct Facet {
         address facetAddress;
