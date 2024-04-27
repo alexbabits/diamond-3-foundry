@@ -38,7 +38,7 @@ forge script script/deployDiamond.s.sol --rpc-url http://localhost:8545 --privat
 * **DiamondStorage**: Hashes a string to get a "random" slot for the diamond's central storage that prevents storage collision. The DiamondStorage struct is found in LibDiamond contract, but the diamond proxy is the true "owner" of this storage because it's calling the Lib functions.
 * **AppStorage**: Found at slot 0 for the diamond proxy. When a facet accesses AppStorage, it accesses it at slot 0 of the Diamond, NOT the facet itself, because of the delegatecall inside the Diamond's fallback. This is how multiple facets are able to operate on the same AppStorage state values. Even though we say we are using "AppStorage", the core diamond template (Cut, Loupe, etc.) still uses diamond storage for itself. There is a separation of concerns between your **app's** storage and the actual **diamond's** storage. Note: I think you can technically replace all the diamond storage references with AppStorage as well, but a lot of protocols seem to leave the core Diamond with diamondStorage pattern.
 
-### Architecture
+## Architecture
 This repo can be seen as having 4 "parts". It's recommended to first understand the basic bitch concepts of the diamond, then learn the dummy examples, and then move on to actual real life token examples.
 
 1. Diamond template files needed to adhere to EIP-2535 that don't need to be touched.
@@ -46,7 +46,7 @@ This repo can be seen as having 4 "parts". It's recommended to first understand 
 3. ERC20Facet example using AppStorage.
 4. ERC1155Facet example using AppStorage. (Soon)
 
-**Diamond template files**:
+### Diamond template files
 * `DiamondCutFacet.sol` = Used to make cuts. You don't need to know about how these functions work unless you want to, reading their names is sufficient.
 * `DiamondLoupeFacet.sol` = Used to view your Diamond. You don't need to know about how these functions work unless you want to, reading their names is sufficient.
 * `OwnershipFacet.sol` = IERC173 ownership standard, so only the owner can make cuts. (Not technically part of the standard, but essential).
@@ -58,7 +58,7 @@ This repo can be seen as having 4 "parts". It's recommended to first understand 
 * `DiamondInit.sol` = Allows you to set some initial storage for your diamond if you want here.
 * `Diamond.sol` = The centralized proxy that uses delegatecall when it's fallback function is provoked through a facet.
 
-**Dummy Examples**:
+### Dummy Examples
 * `deployDiamond.s.sol` = Deploys diamond with foundry.
 * `ExampleFacet.sol` = Dummy facet to test add/replace/remove functionality.
 * `FacetWithAppStorage.sol` = Example facet to show you how AppStorage works, and to test AppStorage.
@@ -68,12 +68,13 @@ This repo can be seen as having 4 "parts". It's recommended to first understand 
 * `LibExample.sol` = An example of a library accessing AppStorage through LibAppStorage.
 * `DiamondUnitTest.t.sol` = Provides unit tests for diamond functionality. 
 
-**ERC20Facet Example**
+### ERC20Facet Example
 There are many different ways to implement a facet in your diamond.
+
 * `ERC20Facet.sol` = ERC20 token as a facet using AppStorage. Facets should not have constructors. Make an `initialize()` function within the facet if needed (only callable once) to explicitly set any initial AppStorage for the facet in the context of the diamond.
 * `IERC20Facet.sol` = Helpful interface for ERC20Facet.
 
-**ERC1155Facet Example**
+### ERC1155Facet Example
 * Soon
 
 Happy Building!
