@@ -13,10 +13,22 @@ contract DiamondInit {
 
     function init() external {
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
+
+        // Diamond
         ds.supportedInterfaces[type(IERC165).interfaceId] = true;
         ds.supportedInterfaces[type(IERC173).interfaceId] = true;
         ds.supportedInterfaces[type(IDiamondCutFacet).interfaceId] = true;
         ds.supportedInterfaces[type(IDiamondLoupeFacet).interfaceId] = true;
+
+        // ERC20
+        ds.supportedInterfaces[0x36372b07] = true; // IERC20
+        ds.supportedInterfaces[0xa219a025] = true; // IERC20MetaData 
+
+        // ERC1155 Soon
+        //ds.supportedInterfaces[type(IERC1155).interfaceId] = true;
+        //ds.supportedInterfaces[IERC1155Metadata_URI.uri.selector] = true;
+        //ds.supportedInterfaces[0xd9b67a26] = true; // ERC1155
+        //ds.supportedInterfaces[0x0e89341c] = true; // ERC1155Metadata
     }
     
 }

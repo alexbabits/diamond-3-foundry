@@ -20,6 +20,9 @@ import {ExampleFacet} from "../src/facets/ExampleFacet.sol";
 import {FacetWithAppStorage} from "../src/facets/FacetWithAppStorage.sol";
 import {FacetWithAppStorage2} from "../src/facets/FacetWithAppStorage2.sol";
 
+import {ERC20Facet} from "../src/facets/ERC20Facet.sol";
+import {IERC20Facet} from "../src/interfaces/IERC20Facet.sol";
+
 contract DiamondUnitTest is Test {
 
     Diamond diamond;
@@ -35,7 +38,11 @@ contract DiamondUnitTest is Test {
     FacetWithAppStorage facetWithAppStorage;
     FacetWithAppStorage2 facetWithAppStorage2;
 
+    ERC20Facet erc20Facet;
+
     address diamondOwner = address(0x1337DAD);
+    address alice = address(0xA11C3);
+    address bob = address(0xB0B);
 
     address[] facetAddressList;
 
@@ -332,6 +339,96 @@ contract DiamondUnitTest is Test {
         // AppStorage should properly persist between multiple facets
         FacetWithAppStorage2 FWAS2 = FacetWithAppStorage2(address(diamond)); // for ease of use.
         assertEq(FWAS2.getFirstVar(), 5, "should match");
+    }
+
+
+    // Deploying & Cutting Facet, state updates, transfers, approval, error emission, event emission.
+    function test_ERC20() public {
+        
+        erc20Facet = new ERC20Facet();
+
+        IDiamondCutFacet.FacetCut[] memory cut = new IDiamondCutFacet.FacetCut[](1);
+
+        bytes4[] memory selectors = new bytes4[](11);
+        selectors[0] = IERC20Facet.initialize.selector; 
+        selectors[1] = IERC20Facet.name.selector;
+        selectors[2] = IERC20Facet.symbol.selector;
+        selectors[3] = IERC20Facet.decimals.selector;
+        selectors[4] = IERC20Facet.balanceOf.selector;
+        selectors[5] = IERC20Facet.allowance.selector;
+        selectors[6] = IERC20Facet.transfer.selector; // ignore any IDE coloring, its ERC20.transfer()
+        selectors[7] = IERC20Facet.transferFrom.selector;
+        selectors[8] = IERC20Facet.approve.selector;
+        selectors[9] = IERC20Facet.mint.selector;
+        selectors[10] = IERC20Facet.totalSupply.selector;
+
+        cut[0] = IDiamondCutFacet.FacetCut({
+            facetAddress: address(erc20Facet),
+            action: IDiamondCutFacet.FacetCutAction.Add,
+            functionSelectors: selectors
+        });
+
+        vm.prank(diamondOwner);
+        ICut.diamondCut(cut, address(0x0), "");
+        facetAddressList = IDiamondLoupeFacet(address(diamond)).facetAddresses(); // save all facet addresses
+        assertEq(facetAddressList.length, 4, "Cut, Loupe, Ownership, ERC20Facet"); // sanity checks
+        assertNotEq(facetAddressList[3], address(0), "ERC20Facet is not 0x0 address"); // sanity checks
+        IERC20Facet erc20 = IERC20Facet(address(diamond)); // for ease of use.
+
+        // Alice cannot call initialize
+        vm.expectRevert();
+        vm.prank(alice);
+        erc20.initialize(1000000e18, "MyERC20Facet", "MERC20F");
+
+        // Only owner can initialize
+        vm.startPrank(diamondOwner);
+        erc20.initialize(1000000e18, "MyERC20Facet", "MERC20F"); 
+        assertEq(erc20.totalSupply(), 1000000e18, "initial supply should be 1M");
+        assertEq(erc20.balanceOf(diamondOwner), 1000000e18, "initial supply should be 1M");
+        
+        // Nobody can re-initialize
+        vm.expectRevert();
+        erc20.initialize(1337e18, "TokenName", "TKN"); // Cannot re-initialize
+
+        // Transfer (AppStorage balance updated properly and emits correct event)
+        vm.expectEmit();
+        emit IERC20Facet.Transfer(diamondOwner, bob, 69420e18);
+        erc20.transfer(bob, 69420e18);
+
+        assertEq(erc20.balanceOf(bob), 69420e18, "should get tokens");
+        assertEq(erc20.balanceOf(diamondOwner), 1000000e18-69420e18, "should deduct tokens");
+        vm.stopPrank();
+
+        // Transfer fails if u have no tokens (Reverts with correct custom error)
+        vm.expectRevert(abi.encodeWithSelector(IERC20Facet.ERC20InsufficientBalance.selector, alice, 0, 1));
+        vm.prank(alice);
+        erc20.transfer(bob, 1);
+
+        // Owner can mint more coins, but nobody else can.
+        vm.prank(diamondOwner);
+        erc20.mint(bob, 1337e18);
+        vm.prank(alice);
+        vm.expectRevert();
+        erc20.mint(alice, 1);
+
+        // diamondOwner approves alice to spend some of his tokens.
+        vm.prank(diamondOwner);
+        erc20.approve(alice, 1000e18);
+
+        // Cannot transferFrom more than allowance
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IERC20Facet.ERC20InsufficientAllowance.selector, alice, 1000e18, 1001e18));
+        erc20.transferFrom(diamondOwner, bob, 1001e18);
+
+        // Can transfer up to amount, but then no more
+        erc20.transferFrom(diamondOwner, bob, 1000e18);
+        vm.expectRevert(abi.encodeWithSelector(IERC20Facet.ERC20InsufficientAllowance.selector, alice, 0, 1));
+        erc20.transferFrom(diamondOwner, bob, 1);
+
+        // Note: These unit tests are not exhaustive b/c ERC20Facet is an exact copy-paste of OZ ERC20.
+        // The only changes were adding `s` for storage on state-changing functions.
+        // Once we see the functions work, AppStorage updates, errors, and events are emitting properly
+        // Then everything appears to be in good working order.
     }
 
 }
