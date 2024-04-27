@@ -8,7 +8,7 @@ import {IERC165} from "../interfaces/IERC165.sol";
 contract DiamondLoupeFacet is IDiamondLoupeFacet, IERC165 {
 
     // Returns all facets AND their functions.
-    function facets() external override view returns (Facet[] memory facets_) {
+    function facets() external view override returns (Facet[] memory facets_) {
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         uint256 numFacets = ds.facetAddresses.length;
         facets_ = new Facet[](numFacets);
@@ -20,25 +20,25 @@ contract DiamondLoupeFacet is IDiamondLoupeFacet, IERC165 {
     }
 
     // Returns all functions inside a facet.
-    function facetFunctionSelectors(address _facet) external override view returns (bytes4[] memory facetFunctionSelectors_) {
+    function facetFunctionSelectors(address _facet) external view override returns (bytes4[] memory facetFunctionSelectors_) {
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         facetFunctionSelectors_ = ds.facetFunctionSelectors[_facet].functionSelectors;
     }
 
     // Returns all the facets of a Diamond.
-    function facetAddresses() external override view returns (address[] memory facetAddresses_) {
+    function facetAddresses() external view override returns (address[] memory facetAddresses_) {
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         facetAddresses_ = ds.facetAddresses;
     }
 
     // Returns a facet that holds this function. If there is no facet with the function, returns 0x0.
-    function facetAddress(bytes4 _functionSelector) external override view returns (address facetAddress_) {
+    function facetAddress(bytes4 _functionSelector) external view override returns (address facetAddress_) {
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         facetAddress_ = ds.selectorToFacetAndPosition[_functionSelector].facetAddress;
     }
 
     // This implements ERC-165.
-    function supportsInterface(bytes4 _interfaceId) external override view returns (bool) {
+    function supportsInterface(bytes4 _interfaceId) external view override returns (bool) {
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         return ds.supportedInterfaces[_interfaceId];
     }

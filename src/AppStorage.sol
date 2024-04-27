@@ -2,6 +2,7 @@
 pragma solidity ^0.8.23;
 
 struct AppStorage {
+
     // Test Variables
     uint256 firstVar;
     uint256 secondVar;
@@ -17,5 +18,8 @@ struct AppStorage {
     string _symbol;
 
     // ERC1155
-    // Soon
+    mapping(uint256 id => mapping(address account => uint256)) _erc1155balances;
+    mapping(address account => mapping(address operator => bool)) _operatorApprovals;
+    string _uri;
+    
 }

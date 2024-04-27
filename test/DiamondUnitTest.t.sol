@@ -22,6 +22,8 @@ import {FacetWithAppStorage2} from "../src/facets/FacetWithAppStorage2.sol";
 
 import {ERC20Facet} from "../src/facets/ERC20Facet.sol";
 import {IERC20Facet} from "../src/interfaces/IERC20Facet.sol";
+import {ERC1155Facet} from "../src/facets/ERC1155Facet.sol";
+import {IERC1155Facet} from "../src/interfaces/IERC1155Facet.sol";
 
 contract DiamondUnitTest is Test {
 
@@ -39,6 +41,7 @@ contract DiamondUnitTest is Test {
     FacetWithAppStorage2 facetWithAppStorage2;
 
     ERC20Facet erc20Facet;
+    ERC1155Facet erc1155Facet;
 
     address diamondOwner = address(0x1337DAD);
     address alice = address(0xA11C3);
@@ -48,7 +51,7 @@ contract DiamondUnitTest is Test {
 
     function setUp() public {
 
-        // Deploy contracts
+        // Deploy core diamond template contracts
         diamondInit = new DiamondInit();
         diamondCutFacet = new DiamondCutFacet();
         diamondLoupeFacet = new DiamondLoupeFacet();
@@ -111,6 +114,10 @@ contract DiamondUnitTest is Test {
         assertTrue(IERC165(address(diamond)).supportsInterface(type(IERC173).interfaceId), "IERC173");
         assertTrue(IERC165(address(diamond)).supportsInterface(type(IDiamondCutFacet).interfaceId), "Cut");
         assertTrue(IERC165(address(diamond)).supportsInterface(type(IDiamondLoupeFacet).interfaceId), "Loupe");
+        assertTrue(IERC165(address(diamond)).supportsInterface(0x36372b07), "IERC20");
+        assertTrue(IERC165(address(diamond)).supportsInterface(0xa219a025), "IERC20MetaData");
+        assertTrue(IERC165(address(diamond)).supportsInterface(0xd9b67a26), "IERC1155");
+        assertTrue(IERC165(address(diamond)).supportsInterface(0x0e89341c), "IERC1155MetadataURI");
 
         // Facets have the correct function selectors?     
         bytes4[] memory loupeViewCut = ILoupe.facetFunctionSelectors(facetAddressList[0]); // DiamondCut
@@ -342,7 +349,7 @@ contract DiamondUnitTest is Test {
     }
 
 
-    // Deploying & Cutting Facet, state updates, transfers, approval, error emission, event emission.
+    // Deploying & Cutting ERC20Facet, state updates, transfers, approval, error emission, event emission.
     function test_ERC20() public {
         
         erc20Facet = new ERC20Facet();
@@ -383,8 +390,11 @@ contract DiamondUnitTest is Test {
         // Only owner can initialize
         vm.startPrank(diamondOwner);
         erc20.initialize(1000000e18, "MyERC20Facet", "MERC20F"); 
+        assertEq(erc20.name(), "MyERC20Facet", "should be name");
+        assertEq(erc20.symbol(), "MERC20F", "should be symbol");
+        assertEq(erc20.decimals(), 18, "should be 18 decimals");
         assertEq(erc20.totalSupply(), 1000000e18, "initial supply should be 1M");
-        assertEq(erc20.balanceOf(diamondOwner), 1000000e18, "initial supply should be 1M");
+        assertEq(erc20.balanceOf(diamondOwner), 1000000e18, "owner should have initial supply");
         
         // Nobody can re-initialize
         vm.expectRevert();
@@ -425,7 +435,101 @@ contract DiamondUnitTest is Test {
         vm.expectRevert(abi.encodeWithSelector(IERC20Facet.ERC20InsufficientAllowance.selector, alice, 0, 1));
         erc20.transferFrom(diamondOwner, bob, 1);
 
-        // Note: These unit tests are not exhaustive b/c ERC20Facet is an exact copy-paste of OZ ERC20.
+        // Note: These unit tests are not exhaustive b/c ERC20Facet inherits OZ ERC20 template.
+        // The only changes were adding `s` for storage on state-changing functions.
+        // Once we see the functions work, AppStorage updates, errors, and events are emitting properly
+        // Then everything appears to be in good working order.
+    }
+
+
+    // Deploying & Cutting ERC1155Facet, state updates, transfers, approval, error emission, event emission.
+    function test_ERC1155() public {
+        
+        erc1155Facet = new ERC1155Facet();
+
+        IDiamondCutFacet.FacetCut[] memory cut = new IDiamondCutFacet.FacetCut[](1);
+
+        bytes4[] memory selectors = new bytes4[](12);
+        selectors[0] = IERC1155Facet.initialize.selector; 
+        selectors[1] = IERC1155Facet.setURI.selector;
+        selectors[2] = IERC1155Facet.mint.selector;
+        selectors[3] = IERC1155Facet.uri.selector;
+        selectors[4] = IERC1155Facet.onERC1155Received.selector;
+        selectors[5] = IERC1155Facet.onERC1155BatchReceived.selector;
+        selectors[6] = IERC1155Facet.balanceOf.selector;
+        selectors[7] = IERC1155Facet.balanceOfBatch.selector;
+        selectors[8] = IERC1155Facet.setApprovalForAll.selector;
+        selectors[9] = IERC1155Facet.isApprovedForAll.selector;
+        selectors[10] = IERC1155Facet.safeTransferFrom.selector;
+        selectors[11] = IERC1155Facet.safeBatchTransferFrom.selector;
+
+        cut[0] = IDiamondCutFacet.FacetCut({
+            facetAddress: address(erc1155Facet),
+            action: IDiamondCutFacet.FacetCutAction.Add,
+            functionSelectors: selectors
+        });
+
+
+        vm.prank(diamondOwner);
+        ICut.diamondCut(cut, address(0x0), "");
+        facetAddressList = IDiamondLoupeFacet(address(diamond)).facetAddresses(); // save all facet addresses
+
+        assertEq(facetAddressList.length, 4, "Cut, Loupe, Ownership, ERC1155Facet"); // sanity checks
+        assertNotEq(facetAddressList[3], address(0), "ERC1155Facet is not 0x0 address"); // sanity checks
+        IERC1155Facet erc1155 = IERC1155Facet(address(diamond)); // for ease of use.
+
+        // Alice cannot call initialize
+        vm.expectRevert();
+        vm.prank(alice);
+        erc1155.initialize("exampleURI");
+
+        // Only owner can initialize
+        vm.startPrank(diamondOwner);
+        erc1155.initialize("MyERC1155URIString"); 
+        assertEq(erc1155.uri(0), "MyERC1155URIString", "should be name");
+
+        // Nobody can re-initialize
+        vm.expectRevert();
+        erc1155.initialize("Im trying to reinitialize ERC1155");
+
+        // Owner can mint himself 1000 tokens of ID 0.
+        // Check that it emits event correctly.
+        vm.expectEmit();
+        emit IERC1155Facet.TransferSingle(diamondOwner, address(0), diamondOwner, 0, 1000e18);
+        erc1155.mint(diamondOwner, 0, 1000e18, "");
+        vm.stopPrank();
+
+        // Transfer fails if u have no tokens (Reverts with correct custom error)
+        vm.expectRevert(abi.encodeWithSelector(IERC1155Facet.ERC1155InsufficientBalance.selector, alice, 0, 1, 0));
+        vm.prank(alice);
+        erc1155.safeTransferFrom(alice, bob, 0, 1, "");
+
+        // Transfer (AppStorage balance updated properly and emits correct event)
+        vm.prank(diamondOwner);
+        vm.expectEmit();
+        emit IERC1155Facet.TransferSingle(diamondOwner, diamondOwner, bob, 0, 420e18);
+        erc1155.safeTransferFrom(diamondOwner, bob, 0, 420e18, "");
+        assertEq(erc1155.balanceOf(diamondOwner, 0), 1000e18-420e18, "should deduct tokens");
+        assertEq(erc1155.balanceOf(bob, 0), 420e18, "bob gets 420 tokenID 0");
+
+        // TransferFrom (Bob tries to send diamondOwner tokens but doesn't have approval)
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(IERC1155Facet.ERC1155MissingApprovalForAll.selector, bob, diamondOwner));
+        erc1155.safeTransferFrom(diamondOwner, alice, 0, 100e18, "");
+
+        // Gets approval
+        vm.prank(diamondOwner);
+        vm.expectEmit();
+        emit IERC1155Facet.ApprovalForAll(diamondOwner, bob, true);
+        erc1155.setApprovalForAll(bob, true);
+
+        // Bob can now send on behalf
+        vm.prank(bob);
+        vm.expectEmit();
+        emit IERC1155Facet.TransferSingle(bob, diamondOwner, alice, 0, 100e18);
+        erc1155.safeTransferFrom(diamondOwner, alice, 0, 100e18, "");
+
+        // Note: These unit tests are not exhaustive b/c ERC1155Facet inherits OZ ERC1155 template.
         // The only changes were adding `s` for storage on state-changing functions.
         // Once we see the functions work, AppStorage updates, errors, and events are emitting properly
         // Then everything appears to be in good working order.

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+// Example dummy facet for testing add/remove/replace functionality
 contract ExampleFacet {
 
     function exampleFunction1() external {}

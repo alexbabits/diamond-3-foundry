@@ -3,6 +3,7 @@ pragma solidity ^0.8.23;
 
 import {AppStorage} from "../AppStorage.sol";
 
+// Example facet using AppStorage
 contract FacetWithAppStorage2 {
     AppStorage internal s; // slot 0
 
