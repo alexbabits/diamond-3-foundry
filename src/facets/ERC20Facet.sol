@@ -17,8 +17,7 @@ contract ERC20Facet is ERC20 {
 
     // Constructor Equivalent - Called by diamond owner during deployment to set real token values.
     function initialize(uint256 _initialSupply, string memory name_, string memory symbol_) external {
-        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
-        require(msg.sender == ds.contractOwner, "Must own the diamond");
+        LibDiamond.enforceIsContractOwner();
         require(bytes(name_).length != 0 && bytes(symbol_).length != 0, "Must be nonzero");
         require(bytes(s._name).length == 0 && bytes(s._symbol).length == 0, "Already initialized");
 
@@ -33,8 +32,7 @@ contract ERC20Facet is ERC20 {
 
     // Custom mint function that we wanted.
     function mint(address to, uint256 amount) public {
-        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
-        require(msg.sender == ds.contractOwner, "Must own the diamond");
+        LibDiamond.enforceIsContractOwner();
         _mint(to, amount);
     }
 

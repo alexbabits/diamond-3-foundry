@@ -19,7 +19,7 @@ struct AppStorage {
     string _name;
     string _symbol;
 
-    // ERC1155 (Complies with OZ ERC20 template) 
+    // ERC1155 (Complies with OZ ERC1155 template) 
     // Changed _balances to _erc1155balances to avoid name collision with ERC20 _balances
     mapping(uint256 id => mapping(address account => uint256)) _erc1155balances; 
     mapping(address account => mapping(address operator => bool)) _operatorApprovals;

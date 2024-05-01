@@ -21,8 +21,7 @@ contract ERC1155Facet is ERC1155 {
 
     // Constructor Equivalent - Called by diamond owner during deployment to set real token values.
     function initialize(string memory uri_) external {
-        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
-        require(msg.sender == ds.contractOwner, "Must own the diamond");
+        LibDiamond.enforceIsContractOwner();
         require(bytes(uri_).length != 0, "Must be nonzero");
         require(bytes(s._uri).length == 0, "Already initialized");
         _setURI(uri_);
@@ -32,14 +31,12 @@ contract ERC1155Facet is ERC1155 {
     // OVERRIDES NOT REQUIRED: [setApprovalForAll, safeTransferFrom, safeBatchTransferFrom]
 
     function setURI(string memory newuri) external {
-        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
-        require(msg.sender == ds.contractOwner, "Must own the diamond");
+        LibDiamond.enforceIsContractOwner();
         _setURI(newuri);
     }
 
     function mint(address to, uint256 id, uint256 value, bytes memory data) external {
-        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
-        require(msg.sender == ds.contractOwner, "Must own the diamond");
+        LibDiamond.enforceIsContractOwner();
         _mint(to, id, value, data);
     }
 
