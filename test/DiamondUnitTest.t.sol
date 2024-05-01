@@ -18,7 +18,7 @@ import {IERC173} from "../src/interfaces/IERC173.sol";
 
 import {ExampleFacet} from "../src/facets/ExampleFacet.sol";
 import {FacetWithAppStorage} from "../src/facets/FacetWithAppStorage.sol";
-import {FacetWithAppStorage2} from "../src/facets/FacetWithAppStorage2.sol";
+import {FacetWithAppStorage2, ExampleEnum} from "../src/facets/FacetWithAppStorage2.sol";
 
 import {ERC20Facet} from "../src/facets/ERC20Facet.sol";
 import {IERC20Facet} from "../src/interfaces/IERC20Facet.sol";
@@ -325,8 +325,12 @@ contract DiamondUnitTest is Test {
 
         IDiamondCutFacet.FacetCut[] memory cut2 = new IDiamondCutFacet.FacetCut[](1);
 
-        bytes4[] memory selector = new bytes4[](1);
-        selector[0] = FacetWithAppStorage2.getFirstVar.selector; 
+        bytes4[] memory selector = new bytes4[](5);
+        selector[0] = FacetWithAppStorage2.getFirstVar.selector;
+        selector[1] = FacetWithAppStorage2.changeNestedStruct.selector; 
+        selector[2] = FacetWithAppStorage2.changeUnprotectedNestedStruct.selector; 
+        selector[3] = FacetWithAppStorage2.viewNestedStruct.selector; 
+        selector[4] = FacetWithAppStorage2.viewUnprotectedNestedStruct.selector; 
 
         cut2[0] = IDiamondCutFacet.FacetCut({
             facetAddress: address(facetWithAppStorage2),
@@ -346,8 +350,31 @@ contract DiamondUnitTest is Test {
         // AppStorage should properly persist between multiple facets
         FacetWithAppStorage2 FWAS2 = FacetWithAppStorage2(address(diamond)); // for ease of use.
         assertEq(FWAS2.getFirstVar(), 5, "should match");
-    }
 
+        // We can view and change values inside a nested struct protected by a mapping in AppStorage.
+        (uint256 var123, uint256 var456, uint256 var789, ExampleEnum exampleEnum) = FWAS2.viewNestedStruct();
+        assertEq(var123, 0, "not set yet");
+        assertEq(var456, 0, "not set yet");
+        assertEq(var789, 0, "not set yet");
+        assertEq(uint8(exampleEnum), uint8(ExampleEnum.ENUM_ONE), "not set yet"); // cast Enum to uint8 for equality test
+
+        FWAS2.changeNestedStruct();
+        (uint256 _var123, uint256 _var456, uint256 _var789, ExampleEnum _exampleEnum) = FWAS2.viewNestedStruct();
+        assertEq(_var123, 123, "set");
+        assertEq(_var456, 456, "set");
+        assertEq(_var789, 789, "set");
+        assertEq(uint8(_exampleEnum), uint8(ExampleEnum.ENUM_TWO), "set"); // cast Enum to uint8 for equality test
+
+        // We can view and change values inside an "unprotected" nested struct in AppStorage.
+        (uint256 var69, uint256 var420) = FWAS2.viewUnprotectedNestedStruct();
+        assertEq(var69, 0, "not set yet");
+        assertEq(var420, 0, "not set yet");
+
+        FWAS2.changeUnprotectedNestedStruct();
+        (uint256 _var69, uint256 _var420) = FWAS2.viewUnprotectedNestedStruct();
+        assertEq(_var69, 69, "set");
+        assertEq(_var420, 420, "set");      
+    }
 
     // Deploying & Cutting ERC20Facet, state updates, transfers, approval, error emission, event emission.
     function test_ERC20() public {
