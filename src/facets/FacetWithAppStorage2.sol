@@ -7,6 +7,10 @@ import {AppStorage, ExampleEnum, InnerStructID} from "../AppStorage.sol";
 contract FacetWithAppStorage2 {
     AppStorage internal s; // slot 0
 
+    // Errors and events for this example FacetWtihAppStorage2
+    event ExampleEvent(uint256 indexed var69, uint256 indexed var420);
+    error ExampleError();
+
     // Shows our getter properly works because AppStorage persists through different facets.
     function getFirstVar() public view returns (uint256) {
         return s.firstVar;
@@ -22,8 +26,10 @@ contract FacetWithAppStorage2 {
 
     // Shows ability to use "unprotected" inner struct without a mapping
     function changeUnprotectedNestedStruct() public {
+        if (s.uns.var69 == 69) revert ExampleError();
         s.uns.var69 = 69;
         s.uns.var420 = 420;
+        emit ExampleEvent(s.uns.var69, s.uns.var420);
     }
 
     // Shows ability to view nested struct values inside AppStorage

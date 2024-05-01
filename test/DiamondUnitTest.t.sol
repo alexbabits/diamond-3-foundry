@@ -370,10 +370,17 @@ contract DiamondUnitTest is Test {
         assertEq(var69, 0, "not set yet");
         assertEq(var420, 0, "not set yet");
 
+        // Does the example event properly emit and does state get properly updated?
+        vm.expectEmit();
+        emit FacetWithAppStorage2.ExampleEvent(69, 420);
         FWAS2.changeUnprotectedNestedStruct();
         (uint256 _var69, uint256 _var420) = FWAS2.viewUnprotectedNestedStruct();
         assertEq(_var69, 69, "set");
         assertEq(_var420, 420, "set");      
+        
+        // Does the example error properly emit?
+        vm.expectRevert(abi.encodeWithSelector(FacetWithAppStorage2.ExampleError.selector));
+        FWAS2.changeUnprotectedNestedStruct();
     }
 
     // Deploying & Cutting ERC20Facet, state updates, transfers, approval, error emission, event emission.
