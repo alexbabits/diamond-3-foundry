@@ -8,7 +8,7 @@ pragma solidity ^0.8.23;
 // this forces AppStorage to be at slot 0 for the facet, and we can still have the extra storage afterwards.
 // Note: This is a band-aid, and should not be used in production. For facets, you should probably just not
 // inherit any contract that has storage itself.
-contract AppStorageRoot {
+abstract contract AppStorageRoot {
     AppStorage internal s;
 }
 
