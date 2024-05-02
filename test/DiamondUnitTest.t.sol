@@ -325,12 +325,13 @@ contract DiamondUnitTest is Test {
 
         IDiamondCutFacet.FacetCut[] memory cut2 = new IDiamondCutFacet.FacetCut[](1);
 
-        bytes4[] memory selector = new bytes4[](5);
+        bytes4[] memory selector = new bytes4[](6);
         selector[0] = FacetWithAppStorage2.getFirstVar.selector;
         selector[1] = FacetWithAppStorage2.changeNestedStruct.selector; 
         selector[2] = FacetWithAppStorage2.changeUnprotectedNestedStruct.selector; 
         selector[3] = FacetWithAppStorage2.viewNestedStruct.selector; 
         selector[4] = FacetWithAppStorage2.viewUnprotectedNestedStruct.selector; 
+        selector[5] = FacetWithAppStorage2.getNumber.selector; 
 
         cut2[0] = IDiamondCutFacet.FacetCut({
             facetAddress: address(facetWithAppStorage2),
@@ -567,6 +568,39 @@ contract DiamondUnitTest is Test {
         // The only changes were adding `s` for storage on state-changing functions.
         // Once we see the functions work, AppStorage updates, errors, and events are emitting properly
         // Then everything appears to be in good working order.
+
+
+        // Deploy FWAS2 to test no storage collisions with AppStorage and OZ ERC1155 inheritance
+        // We thwart the AppStorage collisions with AppStorageRoot contract in AppStorage
+        // Forcing the AppStorage to always be at slot 0 of a contract.
+        facetWithAppStorage2 = new FacetWithAppStorage2();
+
+        IDiamondCutFacet.FacetCut[] memory cut2 = new IDiamondCutFacet.FacetCut[](1);
+
+        bytes4[] memory selector = new bytes4[](6);
+        selector[0] = FacetWithAppStorage2.getFirstVar.selector;
+        selector[1] = FacetWithAppStorage2.changeNestedStruct.selector; 
+        selector[2] = FacetWithAppStorage2.changeUnprotectedNestedStruct.selector; 
+        selector[3] = FacetWithAppStorage2.viewNestedStruct.selector; 
+        selector[4] = FacetWithAppStorage2.viewUnprotectedNestedStruct.selector; 
+        selector[5] = FacetWithAppStorage2.getNumber.selector; 
+
+        cut2[0] = IDiamondCutFacet.FacetCut({
+            facetAddress: address(facetWithAppStorage2),
+            action: IDiamondCutFacet.FacetCutAction.Add,
+            functionSelectors: selector
+        });
+
+        vm.prank(diamondOwner);
+        ICut.diamondCut(cut2, address(0x0), "");
+
+        facetAddressList = IDiamondLoupeFacet(address(diamond)).facetAddresses(); // save all facet addresses
+
+        FacetWithAppStorage2 FWAS2 = FacetWithAppStorage2(address(diamond)); // for ease of use.
+
+        // Importantly, without `AppStorageRoot`, the `_number` was 0 before. Now it matches.
+        uint256 _number = FWAS2.getNumber();
+        assertEq(_number, 777, "should match");
     }
 
 }

@@ -1,6 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+// `AppStorageRoot` contract ensures AppStorage is at slot 0 for facets that inherit other contracts with storage.
+// For example, ERC20 and ERC1155 facets inherit storage from the OZ templates.
+// This causes AppStorage to NOT be at slot 0 where it should be. The AppStorage for those facets was separated 
+// from the diamond and in a different slot. Therefore, if we inherit `AppStorageRoot` as the FIRST inheritance, 
+// this forces AppStorage to be at slot 0 for the facet, and we can still have the extra storage afterwards.
+// Note: This is a band-aid, and should not be used in production. For facets, you should probably just not
+// inherit any contract that has storage itself.
+contract AppStorageRoot {
+    AppStorage internal s;
+}
+
 struct AppStorage {
 
     // Test Variables
@@ -24,6 +35,8 @@ struct AppStorage {
     mapping(uint256 id => mapping(address account => uint256)) _erc1155balances; 
     mapping(address account => mapping(address operator => bool)) _operatorApprovals;
     string _uri;
+
+    uint256 number; // Needed to test AppStorage mis-match fix via `AppStorageRoot`
 }
 
 // Example struct placed inside of AppStorage, "protected" with a mapping. 

@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {AppStorage} from "../AppStorage.sol";
+import {AppStorageRoot} from "../AppStorage.sol";
 import {LibDiamond} from "../libraries/LibDiamond.sol";
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // Note: Only functions that modify traditional ERC20 state need to be overriden to use AppStorage instead.
-contract ERC20Facet is ERC20 {
-    AppStorage internal s;
+contract ERC20Facet is AppStorageRoot, ERC20 {
 
     // ERC20 Constructor needed for OpenZeppelin's `name` and `symbol` requirements
     // Owner is expected to immediately call `initialize()` to properly 

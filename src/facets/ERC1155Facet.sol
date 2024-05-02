@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {AppStorage} from "../AppStorage.sol";
 import {LibDiamond} from "../libraries/LibDiamond.sol";
-
 import {ERC1155, Arrays} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import {AppStorageRoot} from "../AppStorage.sol";
 
 // Note: Only functions that modify traditional ERC1155 state need to be overriden to use AppStorage instead.
-contract ERC1155Facet is ERC1155 {
-    AppStorage internal s;
+contract ERC1155Facet is AppStorageRoot, ERC1155 {
 
     // Needed for `unsafeMemoryAccess()` library function. Comes with OZ's ERC1155.
     using Arrays for uint256[];
@@ -25,6 +23,7 @@ contract ERC1155Facet is ERC1155 {
         require(bytes(uri_).length != 0, "Must be nonzero");
         require(bytes(s._uri).length == 0, "Already initialized");
         _setURI(uri_);
+        s.number = 777;
     }
 
     // ************* PUBLIC FUNCTIONS *************

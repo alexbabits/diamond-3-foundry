@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {AppStorage} from "../AppStorage.sol";
+import {AppStorageRoot} from "../AppStorage.sol";
 import {LibExample} from "../libraries/LibExample.sol";
 
 // Example facet using AppStorage
-contract FacetWithAppStorage {
-    AppStorage internal s; // slot 0
+contract FacetWithAppStorage is AppStorageRoot {
 
     // We can update state with other state variables if we want to.
     function doSomething() external {

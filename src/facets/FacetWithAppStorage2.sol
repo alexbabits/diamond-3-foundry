@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {AppStorage, ExampleEnum, InnerStructID} from "../AppStorage.sol";
+import {AppStorageRoot, ExampleEnum, InnerStructID} from "../AppStorage.sol";
 
 // Example facet using AppStorage
-contract FacetWithAppStorage2 {
-    AppStorage internal s; // slot 0
+contract FacetWithAppStorage2 is AppStorageRoot {
 
     // Errors and events for this example FacetWtihAppStorage2
     event ExampleEvent(uint256 indexed var69, uint256 indexed var420);
@@ -46,4 +45,10 @@ contract FacetWithAppStorage2 {
     function viewUnprotectedNestedStruct() public view returns (uint256, uint256) {
         return (s.uns.var69, s.uns.var420);
     }
+
+    // Used to test AppStorage is in proper place in ERC1155Facet
+    function getNumber() external view returns (uint256) {
+        return s.number;
+    }
+
 }
