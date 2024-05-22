@@ -6,6 +6,7 @@ import {ERC1155, Arrays} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol
 import {AppStorageRoot} from "../AppStorage.sol";
 
 // Note: Only functions that modify traditional ERC1155 state need to be overriden to use AppStorage instead.
+// Note: `AppStorageRoot` MUST be inherited first to ensure AppStorage is at slot 0.
 contract ERC1155Facet is AppStorageRoot, ERC1155 {
 
     // Needed for `unsafeMemoryAccess()` library function. Comes with OZ's ERC1155.

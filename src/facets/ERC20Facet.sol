@@ -7,6 +7,7 @@ import {LibDiamond} from "../libraries/LibDiamond.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // Note: Only functions that modify traditional ERC20 state need to be overriden to use AppStorage instead.
+// Note: `AppStorageRoot` MUST be inherited first to ensure AppStorage is at slot 0.
 contract ERC20Facet is AppStorageRoot, ERC20 {
 
     // ERC20 Constructor needed for OpenZeppelin's `name` and `symbol` requirements

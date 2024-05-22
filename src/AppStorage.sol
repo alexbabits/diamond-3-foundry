@@ -6,8 +6,8 @@ pragma solidity ^0.8.23;
 // This causes AppStorage to NOT be at slot 0 where it should be. The AppStorage for those facets was separated 
 // from the diamond and in a different slot. Therefore, if we inherit `AppStorageRoot` as the FIRST inheritance, 
 // this forces AppStorage to be at slot 0 for the facet, and we can still have the extra storage afterwards.
-// Note: This is a band-aid, and should not be used in production. For facets, you should probably just not
-// inherit any contract that has storage itself.
+// Note: This is a band-aid, and should not be used in production. For facets, you should probably lean towards
+// not inheriting any contract that has storage itself (OZ templates, etc.), but rather extract what it does manually?
 abstract contract AppStorageRoot {
     AppStorage internal s;
 }
