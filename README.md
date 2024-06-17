@@ -4,7 +4,7 @@
 * Note: This repo uses [diamond-3 template](https://github.com/mudgen/diamond-3) with Foundry and AppStorage. I didn't touch the template besides renaming the interfaces to be more explicit and replacing natspec with my own comments. I have also made some example dummy files for testing, ERC20 example, and ERC1155 example. Explanation of the layout is [here](#architecture).
 
 ### :warning: WARNING :warning:
-* I am a JUNIOR dev. Please do NOT trust this code. Do NOT directly use in PRODUCTION. It has NOT been audited. Test and verify EVERYTHING. This is a repo displaying a noob digesting and learning the diamond pattern. This repo is intended for education for complete beginners.
+* Please do NOT trust this code. Do NOT directly use in PRODUCTION. It has NOT been audited. Test and verify EVERYTHING. This is a repo for others like myself learning the diamond pattern. This repo is intended for education tailored at grasping the beginner concepts. 
 * The `AppStorageRoot` technique is a new idea thought up on-the-spot by me that appears to help with the diamond structure when you want to use external templates and libraries like OpenZeppelin that already have storage. It could have bugs and issues.
 
 
