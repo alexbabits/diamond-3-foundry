@@ -25,7 +25,7 @@ forge script script/deployDiamond.s.sol --rpc-url http://localhost:8545 --privat
 ### Education Start: Existential Questions
 1. Why am I here? Most likely because you started building a contract that exceeded Vitalik's tiny 24kB contract size limit. (Or you a security researcher trying to quickly understand the Diamond Proxy Pattern that a protocol uses).
 2. WTF is the Diamond Proxy Pattern? It just uses delegatecall under the hood like all popular proxy-implementation patterns to allow it's implementations to operate on the central proxy storage. Delegatecall can screw up your original storage if you aren't careful during upgrades.
-3. How do I verify my diamond contract? IDK `¯\_(ツ)_/¯` I've never built anything worth any value that needed to be verified. People say Etherscan cannot view and verify diamonds properly, so [Louper](https://louper.dev/) was built to examine and verify testnet and mainnet diamond protocols.
+3. How do I verify my diamond contract? IDK `¯\_(ツ)_/¯` as I haven't explicitly done this myself. Etherscan cannot view and verify diamonds properly, so [Louper](https://louper.dev/) was built to examine and verify testnet and mainnet diamond protocols.
 
 ### The Correct Stack [Diamond-3, AppStorage, Foundry, VSCode]
 1. Starter Template Choices: [Diamond-1, Diamond-2, Diamond-3]. Best: **Diamond-3**. They are all similar and cover the core implementation of Diamond pattern. This is the latest one, it works fine.
